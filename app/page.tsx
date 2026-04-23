@@ -24,6 +24,13 @@ const ETHToken = {
   name: 'Ethereum',
   symbol: 'ETH',
   image: 'https://dynamic-assets.coinbase.com/dbb4721c85e2754803395dcdecc1180194b15093555ae3bca393661159842f7c0062a4d336a7cb8d313769c7924372e9124237d6e87747833a6778f244498305/asset_icons/c33f9909241517452d37ef95a9757657d4726f53443a290cb90e S46995646 S46995646 S46995646.png',
+  price: '$2,451.08',
+  change24h: '+1.2%',
+  change7d: '+5.4%',
+  volume24h: '$12.4B',
+  marketCap: '$294.5B',
+  ath: '$4,878.26',
+  up: true
 };
 
 const USDCToken = {
@@ -33,6 +40,13 @@ const USDCToken = {
   name: 'USDC',
   symbol: 'USDC',
   image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
+  price: '$1.00',
+  change24h: '0.0%',
+  change7d: '0.0%',
+  volume24h: '$4.2B',
+  marketCap: '$32.1B',
+  ath: '$1.04',
+  up: true
 };
 
 const DAIToken = {
@@ -42,6 +56,13 @@ const DAIToken = {
   name: 'DAI',
   symbol: 'DAI',
   image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
+  price: '$1.00',
+  change24h: '+0.01%',
+  change7d: '+0.03%',
+  volume24h: '$250M',
+  marketCap: '$5.3B',
+  ath: '$1.22',
+  up: true
 };
 
 const cbBTCToken = {
@@ -51,6 +72,13 @@ const cbBTCToken = {
   name: 'Coinbase Wrapped BTC',
   symbol: 'cbBTC',
   image: 'https://dynamic-assets.coinbase.com/dbb4721c85e2754803395dcdecc1180194b15093555ae3bca393661159842f7c0062a4d336a7cb8d313769c7924372e9124237d6e87747833a6778f244498305/asset_icons/c33f9909241517452d37ef95a9757657d4726f53443a290cb90e S46995646.png',
+  price: '$64,124.50',
+  change24h: '-0.8%',
+  change7d: '+2.1%',
+  volume24h: '$840M',
+  marketCap: '$1.2B',
+  ath: '$73,737.94',
+  up: false
 };
 
 const DEGENToken = {
@@ -60,16 +88,25 @@ const DEGENToken = {
   name: 'Degen',
   symbol: 'DEGEN',
   image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
+  price: '$0.0142',
+  change24h: '+14.5%',
+  change7d: '+45.2%',
+  volume24h: '$12M',
+  marketCap: '$340M',
+  ath: '$0.064',
+  up: true
 };
 
 const tokens = [ETHToken, USDCToken, DAIToken, cbBTCToken, DEGENToken];
 
 export default function SwapPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [swapMode, setSwapMode] = useState<'market' | 'limit'>('market');
+  const [swapMode, setSwapMode] = useState<'market' | 'limit' | 'compare'>('market');
   const [limitPrice, setLimitPrice] = useState('');
   const [fromToken, setFromToken] = useState<Token>(tokens[0]);
   const [toToken, setToToken] = useState<Token>(tokens[1]);
+  const [compTokenA, setCompTokenA] = useState<any>(tokens[0]);
+  const [compTokenB, setCompTokenB] = useState<any>(tokens[1]);
   const [amount, setAmount] = useState('');
   const [expiry, setExpiry] = useState('24h');
   const [placedOrders, setPlacedOrders] = useState<any[]>([]);
@@ -152,7 +189,14 @@ export default function SwapPage() {
               <TrendingUp className="w-3 h-3" /> Trending Pairs
             </h3>
             <div className="bg-[#151518] border border-[#27272a] rounded-2xl overflow-hidden">
-               <MarketTable />
+               <MarketTable onCompare={(pair) => {
+                 const [symA, symB] = pair.split('/');
+                 const tokenA = tokens.find(t => t.symbol === symA) || tokens[0];
+                 const tokenB = tokens.find(t => t.symbol === symB) || tokens[1];
+                 setCompTokenA(tokenA);
+                 setCompTokenB(tokenB);
+                 setSwapMode('compare');
+               }} />
             </div>
           </div>
         </aside>
@@ -180,6 +224,12 @@ export default function SwapPage() {
                       className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${swapMode === 'limit' ? 'bg-[#1c1c20] text-white shadow-sm' : 'text-[#71717a] hover:text-[#a1a1aa]'}`}
                     >
                       Limit
+                    </button>
+                    <button 
+                      onClick={() => setSwapMode('compare')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${swapMode === 'compare' ? 'bg-[#1c1c20] text-white shadow-sm' : 'text-[#71717a] hover:text-[#a1a1aa]'}`}
+                    >
+                      Compare
                     </button>
                   </div>
                   <SwapSettings className="!bg-transparent !p-0">
@@ -246,7 +296,7 @@ export default function SwapPage() {
                         </div>
                       </Swap>
                     </motion.div>
-                  ) : (
+                  ) : swapMode === 'limit' ? (
                     <motion.div
                       key="limit"
                       initial={{ opacity: 0, x: 10 }}
@@ -314,6 +364,73 @@ export default function SwapPage() {
                       <p className="text-[11px] text-[#52525b] text-center px-4">
                         Order will execute automatically when market price matches your limit price. 0.1% fee on completion.
                       </p>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="compare"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="space-y-6"
+                    >
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                           <label className="text-[9px] font-bold text-[#71717a] uppercase tracking-wider">Asset A</label>
+                           <div className="bg-[#1c1c20] rounded-xl p-2 border border-[#27272a]">
+                              <TokenSelectDropdown 
+                                options={tokens}
+                                token={compTokenA}
+                                setToken={setCompTokenA}
+                              />
+                           </div>
+                        </div>
+                        <div className="space-y-2">
+                           <label className="text-[9px] font-bold text-[#71717a] uppercase tracking-wider">Asset B</label>
+                           <div className="bg-[#1c1c20] rounded-xl p-2 border border-[#27272a]">
+                              <TokenSelectDropdown 
+                                options={tokens}
+                                token={compTokenB}
+                                setToken={setCompTokenB}
+                              />
+                           </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#0b0b0c] rounded-24px p-1 overflow-hidden border border-[#27272a]">
+                         <table className="w-full text-left">
+                            <tbody className="text-[13px]">
+                               <ComparisonRow label="Current Price" valA={compTokenA?.price} valB={compTokenB?.price} />
+                               <ComparisonRow 
+                                  label="24h Change" 
+                                  valA={compTokenA?.change24h} 
+                                  valB={compTokenB?.change24h} 
+                                  isTrend 
+                                  upA={compTokenA?.up} 
+                                  upB={compTokenB?.up} 
+                               />
+                               <ComparisonRow label="7d Change" valA={compTokenA?.change7d} valB={compTokenB?.change7d} isTrend upA={true} upB={true} />
+                               <ComparisonRow label="Trading Volume" valA={compTokenA?.volume24h} valB={compTokenB?.volume24h} />
+                               <ComparisonRow label="Market Cap" valA={compTokenA?.marketCap} valB={compTokenB?.marketCap} />
+                               <ComparisonRow label="All-time High" valA={compTokenA?.ath} valB={compTokenB?.ath} />
+                               <ComparisonRow label="Network" valA="Base" valB="Base" />
+                            </tbody>
+                         </table>
+                      </div>
+
+                      <div className="flex gap-3">
+                         <button 
+                          onClick={() => { setFromToken(compTokenA); setToToken(compTokenB); setSwapMode('market'); }}
+                          className="flex-1 bg-[#1c1c20] border border-[#312e81] rounded-xl py-3 text-xs font-bold hover:bg-[#27272a] transition-all"
+                         >
+                            Swap A for B
+                         </button>
+                         <button 
+                          onClick={() => { setFromToken(compTokenB); setToToken(compTokenA); setSwapMode('market'); }}
+                          className="flex-1 bg-[#1c1c20] border border-[#312e81] rounded-xl py-3 text-xs font-bold hover:bg-[#27272a] transition-all"
+                         >
+                            Swap B for A
+                         </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -387,12 +504,12 @@ function StatItem({ label, value, trend, icon }: { label: string; value: string;
   );
 }
 
-function MarketTable() {
+function MarketTable({ onCompare }: { onCompare?: (pair: string) => void }) {
   const pairs = [
     { name: 'ETH/USDC', price: '$2,450', change: '+0.8%', up: true },
     { name: 'cbBTC/ETH', price: '$43,120', change: '-1.4%', up: false },
     { name: 'DEGEN/ETH', price: '$0.0142', change: '+12.4%', up: true },
-    { name: 'PEPE/ETH', price: '$0.0000', change: '-5.1%', up: false },
+    { name: 'DAI/USDC', price: '$1.00', change: '+0.01%', up: true },
   ];
 
   return (
@@ -406,7 +523,11 @@ function MarketTable() {
       </thead>
       <tbody className="text-[13px] font-medium">
         {pairs.map((p, i) => (
-          <tr key={i} className="hover:bg-[#1c1c20] transition-colors cursor-pointer group">
+          <tr 
+            key={i} 
+            className="hover:bg-[#1c1c20] transition-colors cursor-pointer group"
+            onClick={() => onCompare?.(p.name)}
+          >
             <td className="py-3 px-4">{p.name}</td>
             <td className="py-3 px-2 text-[#a1a1aa] group-hover:text-white transition-colors">{p.price}</td>
             <td className={`py-3 px-4 text-right ${p.up ? 'text-[#10b981]' : 'text-[#ef4444]'}`}>{p.change}</td>
@@ -423,6 +544,24 @@ function PriceDetail({ label, value }: { label: string; value: string }) {
       <span className="text-[#a1a1aa]">{label}</span>
       <span className="font-medium text-white">{value}</span>
     </div>
+  );
+}
+
+function ComparisonRow({ label, valA, valB, isTrend, upA, upB }: { label: string; valA: string; valB: string; isTrend?: boolean; upA?: boolean; upB?: boolean }) {
+  return (
+    <tr className="border-b border-[#1f1f22] last:border-0 hover:bg-[#151518] transition-colors">
+      <td className="py-4 px-4">
+         <div className="text-[10px] text-[#71717a] font-bold uppercase tracking-wider mb-0.5">{label}</div>
+         <div className="grid grid-cols-2 gap-4">
+            <div className={`font-semibold ${isTrend ? (upA ? 'text-[#10b981]' : 'text-[#ef4444]') : 'text-white'}`}>
+              {valA}
+            </div>
+            <div className={`font-semibold ${isTrend ? (upB ? 'text-[#10b981]' : 'text-[#ef4444]') : 'text-white'}`}>
+              {valB}
+            </div>
+         </div>
+      </td>
+    </tr>
   );
 }
 
