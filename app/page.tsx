@@ -16,6 +16,25 @@ import { useAccount } from 'wagmi';
 import { ArrowDown, Settings2, Activity, Zap, TrendingUp, History, Search, Clock, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
+
+// Mock historical data generation
+const generateHistory = (basePrice: number, points: number = 20) => {
+  return Array.from({ length: points }, (_, i) => ({
+    time: `${i}:00`,
+    price: basePrice + (Math.random() - 0.5) * (basePrice * 0.05)
+  }));
+};
 
 const ETHToken = {
   address: '',
@@ -30,7 +49,8 @@ const ETHToken = {
   volume24h: '$12.4B',
   marketCap: '$294.5B',
   ath: '$4,878.26',
-  up: true
+  up: true,
+  history: generateHistory(2451.08)
 };
 
 const USDCToken = {
@@ -46,7 +66,8 @@ const USDCToken = {
   volume24h: '$4.2B',
   marketCap: '$32.1B',
   ath: '$1.04',
-  up: true
+  up: true,
+  history: generateHistory(1.00)
 };
 
 const DAIToken = {
@@ -62,7 +83,8 @@ const DAIToken = {
   volume24h: '$250M',
   marketCap: '$5.3B',
   ath: '$1.22',
-  up: true
+  up: true,
+  history: generateHistory(1.00)
 };
 
 const cbBTCToken = {
@@ -78,7 +100,8 @@ const cbBTCToken = {
   volume24h: '$840M',
   marketCap: '$1.2B',
   ath: '$73,737.94',
-  up: false
+  up: false,
+  history: generateHistory(64124.50)
 };
 
 const DEGENToken = {
@@ -87,14 +110,15 @@ const DEGENToken = {
   decimals: 18,
   name: 'Degen',
   symbol: 'DEGEN',
-  image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
+  image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f.png',
   price: '$0.0142',
   change24h: '+14.5%',
   change7d: '+45.2%',
   volume24h: '$12M',
   marketCap: '$340M',
   ath: '$0.064',
-  up: true
+  up: true,
+  history: generateHistory(0.0142)
 };
 
 const tokens = [ETHToken, USDCToken, DAIToken, cbBTCToken, DEGENToken];
@@ -396,8 +420,37 @@ export default function SwapPage() {
                         </div>
                       </div>
 
-                      <div className="bg-[#0b0b0c] rounded-24px p-1 overflow-hidden border border-[#27272a]">
-                         <table className="w-full text-left">
+                      <div className="bg-[#0b0b0c] rounded-[24px] p-2 overflow-hidden border border-[#27272a]">
+                          <div className="h-[200px] w-full p-2">
+                             <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={compTokenA?.history?.map((h: any, i: number) => ({
+                                   time: h.time,
+                                   valA: h.price,
+                                   valB: compTokenB?.history?.[i]?.price
+                                }))}>
+                                   <defs>
+                                      <linearGradient id="colorA" x1="0" y1="0" x2="0" y2="1">
+                                         <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                      </linearGradient>
+                                      <linearGradient id="colorB" x1="0" y1="0" x2="0" y2="1">
+                                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                                         <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                      </linearGradient>
+                                   </defs>
+                                   <CartesianGrid strokeDasharray="3 3" stroke="#1f1f22" vertical={false} />
+                                   <XAxis dataKey="time" hide />
+                                   <YAxis hide domain={['auto', 'auto']} />
+                                   <Tooltip 
+                                      contentStyle={{ backgroundColor: '#151518', border: '1px solid #27272a', borderRadius: '12px', fontSize: '12px' }}
+                                      labelStyle={{ color: '#71717a' }}
+                                   />
+                                   <Area type="monotone" dataKey="valA" stroke="#6366f1" fillOpacity={1} fill="url(#colorA)" name={compTokenA?.symbol} strokeWidth={2} />
+                                   <Area type="monotone" dataKey="valB" stroke="#10b981" fillOpacity={1} fill="url(#colorB)" name={compTokenB?.symbol} strokeWidth={2} />
+                                </AreaChart>
+                             </ResponsiveContainer>
+                          </div>
+                          <table className="w-full text-left">
                             <tbody className="text-[13px]">
                                <ComparisonRow label="Current Price" valA={compTokenA?.price} valB={compTokenB?.price} />
                                <ComparisonRow 
@@ -442,7 +495,6 @@ export default function SwapPage() {
                  <PriceDetail label="Max Slippage" value="0.5%" />
                  <PriceDetail label="Fee" value="0.3%" />
               </div>
-            </div>
             
             <SwapToast />
           </motion.div>
