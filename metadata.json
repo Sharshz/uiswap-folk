@@ -1,0 +1,6 @@
+{
+  "name": "BaseSwap Mini",
+  "description": "A decentralized exchange mini app built on Base using OnchainKit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
