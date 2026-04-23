@@ -1,12 +1,12 @@
 'use client';
 
 import { http, cookieStorage, createConfig, createStorage } from 'wagmi';
-import { base } from 'viem/chains';
+import { base, mainnet } from 'viem/chains';
 import { coinbaseWallet } from 'wagmi/connectors';
 
 export function getConfig() {
   return createConfig({
-    chains: [base],
+    chains: [base, mainnet],
     connectors: [
       coinbaseWallet({
         appName: 'BaseSwap Mini',
@@ -20,6 +20,7 @@ export function getConfig() {
     ssr: true,
     transports: {
       [base.id]: http(),
+      [mainnet.id]: http(),
     },
   });
 }

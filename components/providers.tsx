@@ -2,15 +2,14 @@
 
 import { ReactNode, useState } from 'react';
 import { OnchainKitProvider } from '@coinbase/onchainkit';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
 import { WagmiProvider } from 'wagmi';
 import { base } from 'viem/chains';
 import { getConfig } from '@/lib/wagmi';
-import { createQueryClient } from '@/lib/query';
 
 export function Providers({ children }: { children: ReactNode }) {
   const [config] = useState(() => getConfig());
-  const [queryClient] = useState(() => createQueryClient());
+  const [queryClient] = useState(() => new QueryClient());
 
   return (
     <WagmiProvider config={config}>

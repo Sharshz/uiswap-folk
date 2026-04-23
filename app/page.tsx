@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { 
   Swap, 
@@ -14,9 +14,8 @@ import {
 import { Wallet, ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { useAccount } from 'wagmi';
 import { ArrowDown, Settings2, Activity, Zap, TrendingUp, History } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 
-// Common tokens on Base
 const ETHToken = {
   address: '',
   chainId: 8453,
@@ -35,9 +34,18 @@ const USDCToken = {
   image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
 };
 
-export default function SwapPage() {
-  const { isConnected } = useAccount();
+const DAIToken = {
+  address: '0x50c5716b9a209391928033320f6667958742513f',
+  chainId: 8453,
+  decimals: 18,
+  name: 'DAI',
+  symbol: 'DAI',
+  image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
+};
 
+const tokens = [ETHToken, USDCToken, DAIToken];
+
+export default function SwapPage() {
   useEffect(() => {
     const init = async () => {
       try {
@@ -51,8 +59,7 @@ export default function SwapPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0b0b0c] text-[#e4e4e7] overflow-x-hidden">
-      {/* Header */}
-      <header className="h-[72px] border-bottom border-[#1f1f22] flex items-center justify-between px-8 bg-[#0d0d0f] sticky top-0 z-50">
+      <header className="h-[72px] border-b border-[#1f1f22] flex items-center justify-between px-8 bg-[#0d0d0f] sticky top-0 z-50">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-linear-to-br from-[#6366f1] to-[#a855f7] shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
           <span className="text-2xl font-bold tracking-tighter text-white">BASESWAP</span>
@@ -70,15 +77,12 @@ export default function SwapPage() {
           ))}
         </nav>
 
-        <Wallet className="bg-[#1f1f22] border-[#3f3f46] hover:bg-[#27272a] transition-all rounded-xl">
+        <Wallet className="!bg-[#1f1f22] !border-[#3f3f46] hover:!bg-[#27272a] transition-all !rounded-xl">
            <ConnectWallet className="px-5 py-2.5 text-sm font-semibold !bg-transparent !border-none !text-white" />
         </Wallet>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-8 grid grid-cols-1 lg:grid-cols-[280px_1fr_280px] gap-8">
-        
-        {/* Left Sidebar: Market Stats */}
         <aside className="space-y-6 hidden lg:block">
           <div className="bg-[#151518] border border-[#27272a] rounded-2xl p-4 space-y-4 shadow-sm">
             <StatItem label="Base Network" value="Active" icon={<Activity className="w-4 h-4 text-emerald-500" />} />
@@ -96,7 +100,6 @@ export default function SwapPage() {
           </div>
         </aside>
 
-        {/* Center: Swap Card */}
         <section className="flex flex-col items-center pt-8">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -119,7 +122,7 @@ export default function SwapPage() {
                     <label className="text-xs font-semibold text-[#71717a] mb-2 block uppercase tracking-wider">Sell</label>
                     <SwapAmountInput
                       label="From"
-                      swappableTokens={[ETHToken, USDCToken]}
+                      swappableTokens={tokens}
                       token={ETHToken}
                       type="from"
                     />
@@ -139,7 +142,7 @@ export default function SwapPage() {
                     <label className="text-xs font-semibold text-[#71717a] mb-2 block uppercase tracking-wider">Buy</label>
                     <SwapAmountInput
                       label="To"
-                      swappableTokens={[ETHToken, USDCToken]}
+                      swappableTokens={tokens}
                       token={USDCToken}
                       type="to"
                     />
@@ -163,7 +166,6 @@ export default function SwapPage() {
           </motion.div>
         </section>
 
-        {/* Right Sidebar: History */}
         <aside className="hidden lg:block">
            <div className="h-full border-l border-[#1f1f22] pl-6 space-y-8">
               <div className="space-y-6">
@@ -186,16 +188,6 @@ export default function SwapPage() {
            </div>
         </aside>
       </main>
-
-      {/* Footer Mobile Nav */}
-      <footer className="lg:hidden h-16 border-t border-[#1f1f22] bg-[#0d0d0f] flex items-center justify-around px-4 sticky bottom-0 z-50">
-         {['Swap', 'Tokens', 'Pools', 'Activity'].map((item) => (
-           <button key={item} className="p-2 flex flex-col items-center gap-1">
-             <div className="w-5 h-5 text-[#71717a]" />
-             <span className="text-[10px] font-medium text-[#71717a]">{item}</span>
-           </button>
-         ))}
-      </footer>
     </div>
   );
 }
