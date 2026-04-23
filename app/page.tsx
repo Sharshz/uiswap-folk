@@ -13,8 +13,9 @@ import {
 } from '@coinbase/onchainkit/swap';
 import { Wallet, ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { useAccount } from 'wagmi';
-import { ArrowDown, Settings2, Activity, Zap, TrendingUp, History } from 'lucide-react';
+import { ArrowDown, Settings2, Activity, Zap, TrendingUp, History, Search } from 'lucide-react';
 import { motion } from 'motion/react';
+import { useState } from 'react';
 
 const ETHToken = {
   address: '',
@@ -40,12 +41,37 @@ const DAIToken = {
   decimals: 18,
   name: 'DAI',
   symbol: 'DAI',
-  image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
+  image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
 };
 
-const tokens = [ETHToken, USDCToken, DAIToken];
+const cbBTCToken = {
+  address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf',
+  chainId: 8453,
+  decimals: 8,
+  name: 'Coinbase Wrapped BTC',
+  symbol: 'cbBTC',
+  image: 'https://dynamic-assets.coinbase.com/dbb4721c85e2754803395dcdecc1180194b15093555ae3bca393661159842f7c0062a4d336a7cb8d313769c7924372e9124237d6e87747833a6778f244498305/asset_icons/c33f9909241517452d37ef95a9757657d4726f53443a290cb90e S46995646.png',
+};
+
+const DEGENToken = {
+  address: '0x4ed4E8615b61adEe985f482575D3595c1E7d216d',
+  chainId: 8453,
+  decimals: 18,
+  name: 'Degen',
+  symbol: 'DEGEN',
+  image: 'https://dynamic-assets.coinbase.com/3c15df5e2cbc17079633215264b3ed037df66e2c34091599351c099308cc4b6f125a0733ba4c718b95886d2678602b9e6727F47f9e4e6f4e6f4e6f4e6f4e6f4e6f4e6f.png',
+};
+
+const tokens = [ETHToken, USDCToken, DAIToken, cbBTCToken, DEGENToken];
 
 export default function SwapPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredTokens = tokens.filter(t => 
+    t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   useEffect(() => {
     const init = async () => {
       try {
@@ -109,11 +135,24 @@ export default function SwapPage() {
             <div className="bg-[#151518] border border-[#27272a] rounded-[32px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-[#6366f1] via-[#a855f7] to-[#6366f1]" />
               
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold tracking-tight">Swap</h2>
-                 <SwapSettings className="!bg-transparent !p-0">
-                   <Settings2 className="w-5 h-5 text-[#71717a] hover:text-white transition-colors cursor-pointer" />
-                 </SwapSettings>
+              <div className="flex flex-col gap-4 mb-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-xl font-bold tracking-tight">Swap</h2>
+                  <SwapSettings className="!bg-transparent !p-0">
+                    <Settings2 className="w-5 h-5 text-[#71717a] hover:text-white transition-colors cursor-pointer" />
+                  </SwapSettings>
+                </div>
+                
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a]" />
+                  <input
+                    type="text"
+                    placeholder="Search tokens..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-[#1c1c20] border border-[#27272a] rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[#6366f1] transition-colors text-[#e4e4e7] placeholder:text-[#52525b]"
+                  />
+                </div>
               </div>
 
               <Swap>
@@ -122,7 +161,7 @@ export default function SwapPage() {
                     <label className="text-xs font-semibold text-[#71717a] mb-2 block uppercase tracking-wider">Sell</label>
                     <SwapAmountInput
                       label="From"
-                      swappableTokens={tokens}
+                      swappableTokens={filteredTokens}
                       token={ETHToken}
                       type="from"
                     />
@@ -142,7 +181,7 @@ export default function SwapPage() {
                     <label className="text-xs font-semibold text-[#71717a] mb-2 block uppercase tracking-wider">Buy</label>
                     <SwapAmountInput
                       label="To"
-                      swappableTokens={tokens}
+                      swappableTokens={filteredTokens}
                       token={USDCToken}
                       type="to"
                     />
