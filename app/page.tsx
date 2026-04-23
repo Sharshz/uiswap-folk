@@ -13,8 +13,8 @@ import {
 } from '@coinbase/onchainkit/swap';
 import { Wallet, ConnectWallet } from '@coinbase/onchainkit/wallet';
 import { useAccount } from 'wagmi';
-import { ArrowDown, Settings2, Activity, Zap, TrendingUp, History, Search } from 'lucide-react';
-import { motion } from 'motion/react';
+import { ArrowDown, Settings2, Activity, Zap, TrendingUp, History, Search, Clock, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useState } from 'react';
 
 const ETHToken = {
@@ -66,11 +66,42 @@ const tokens = [ETHToken, USDCToken, DAIToken, cbBTCToken, DEGENToken];
 
 export default function SwapPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [swapMode, setSwapMode] = useState<'market' | 'limit'>('market');
+  const [limitPrice, setLimitPrice] = useState('');
+  const [fromToken, setFromToken] = useState<Token>(tokens[0]);
+  const [toToken, setToToken] = useState<Token>(tokens[1]);
+  const [amount, setAmount] = useState('');
+  const [expiry, setExpiry] = useState('24h');
+  const [placedOrders, setPlacedOrders] = useState<any[]>([]);
 
   const filteredTokens = tokens.filter(t => 
     t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     t.symbol.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const calculateTotal = () => {
+    if (!amount || !limitPrice) return '0.00';
+    return (parseFloat(amount) * parseFloat(limitPrice)).toFixed(2);
+  };
+
+  const handlePlaceLimitOrder = () => {
+    if (!amount || !limitPrice || !toToken || !fromToken) return;
+    const newOrder = {
+      id: Math.random().toString(36).substr(2, 9),
+      from: fromToken.symbol,
+      to: toToken.symbol,
+      amount,
+      price: limitPrice,
+      total: calculateTotal(),
+      expiry,
+      status: 'Open',
+      time: 'Just now'
+    };
+    setPlacedOrders([newOrder, ...placedOrders]);
+    setAmount('');
+    setLimitPrice('');
+    // Mock success feedback
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -132,67 +163,162 @@ export default function SwapPage() {
             animate={{ opacity: 1, y: 0 }}
             className="w-full max-w-[460px]"
           >
-            <div className="bg-[#151518] border border-[#27272a] rounded-[32px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+            <div className="bg-[#151518] border border-[#27272a] rounded-[32px] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden group min-h-[520px]">
               <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-[#6366f1] via-[#a855f7] to-[#6366f1]" />
               
-              <div className="flex flex-col gap-4 mb-6">
+              <div className="flex flex-col gap-6 mb-6">
                 <div className="flex justify-between items-center">
-                  <h2 className="text-xl font-bold tracking-tight">Swap</h2>
+                  <div className="flex bg-[#0b0b0c] p-1 rounded-xl border border-[#1f1f22]">
+                    <button 
+                      onClick={() => setSwapMode('market')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${swapMode === 'market' ? 'bg-[#1c1c20] text-white shadow-sm' : 'text-[#71717a] hover:text-[#a1a1aa]'}`}
+                    >
+                      Market
+                    </button>
+                    <button 
+                      onClick={() => setSwapMode('limit')}
+                      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${swapMode === 'limit' ? 'bg-[#1c1c20] text-white shadow-sm' : 'text-[#71717a] hover:text-[#a1a1aa]'}`}
+                    >
+                      Limit
+                    </button>
+                  </div>
                   <SwapSettings className="!bg-transparent !p-0">
                     <Settings2 className="w-5 h-5 text-[#71717a] hover:text-white transition-colors cursor-pointer" />
                   </SwapSettings>
                 </div>
-                
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a]" />
-                  <input
-                    type="text"
-                    placeholder="Search tokens..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full bg-[#1c1c20] border border-[#27272a] rounded-xl py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-[#6366f1] transition-colors text-[#e4e4e7] placeholder:text-[#52525b]"
-                  />
-                </div>
-              </div>
 
-              <Swap>
-                <div className="space-y-3">
-                  <div className="bg-[#1c1c20] border border-[#27272a] rounded-2xl p-4 hover:border-[#3f3f46] transition-colors">
-                    <label className="text-xs font-semibold text-[#71717a] mb-2 block uppercase tracking-wider">Sell</label>
-                    <SwapAmountInput
-                      label="From"
-                      swappableTokens={filteredTokens}
-                      token={ETHToken}
-                      type="from"
-                    />
-                  </div>
-
-                  <div className="relative z-10 h-0 flex items-center justify-center">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-1 bg-[#151518] rounded-xl">
-                      <div className="bg-[#1c1c20] border border-[#27272a] rounded-lg p-2 group-hover:border-[#6366f1] transition-all transform active:scale-95 cursor-pointer">
-                        <SwapToggleButton className="!bg-transparent !p-0">
-                           <ArrowDown className="w-5 h-5 text-[#6366f1]" />
-                        </SwapToggleButton>
+                <AnimatePresence mode="wait">
+                  {swapMode === 'market' ? (
+                    <motion.div
+                      key="market"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      className="space-y-6"
+                    >
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#71717a]" />
+                        <input
+                          type="text"
+                          placeholder="Search tokens..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="w-full bg-[#1c1c20] border border-[#27272a] rounded-xl py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-[#6366f1] transition-colors text-[#e4e4e7] placeholder:text-[#52525b]"
+                        />
                       </div>
-                    </div>
-                  </div>
 
-                  <div className="bg-[#1c1c20] border border-[#27272a] rounded-2xl p-4 hover:border-[#3f3f46] transition-colors">
-                    <label className="text-xs font-semibold text-[#71717a] mb-2 block uppercase tracking-wider">Buy</label>
-                    <SwapAmountInput
-                      label="To"
-                      swappableTokens={filteredTokens}
-                      token={USDCToken}
-                      type="to"
-                    />
-                  </div>
-                </div>
+                      <Swap>
+                        <div className="space-y-3">
+                          <div className="bg-[#1c1c20] border border-[#27272a] rounded-2xl p-4 hover:border-[#3f3f46] transition-colors">
+                            <label className="text-xs font-semibold text-[#71717a] mb-2 block uppercase tracking-wider">Sell</label>
+                            <SwapAmountInput
+                              label="From"
+                              swappableTokens={filteredTokens}
+                              token={ETHToken}
+                              type="from"
+                            />
+                          </div>
 
-                <div className="mt-6 space-y-4">
-                  <SwapButton className="!w-full !rounded-2xl !py-7 !text-lg font-bold !bg-linear-to-br !from-[#6366f1] !to-[#8b5cf6] !border-none hover:!scale-[1.02] active:!scale-95 transition-transform !shadow-[0_10px_25px_rgba(99,102,241,0.3)]" />
-                  <SwapMessage />
-                </div>
-              </Swap>
+                          <div className="relative z-10 h-0 flex items-center justify-center">
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-1 bg-[#151518] rounded-xl">
+                              <div className="bg-[#1c1c20] border border-[#27272a] rounded-lg p-2 group-hover:border-[#6366f1] transition-all transform active:scale-95 cursor-pointer">
+                                <SwapToggleButton className="!bg-transparent !p-0">
+                                   <ArrowDown className="w-5 h-5 text-[#6366f1]" />
+                                </SwapToggleButton>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-[#1c1c20] border border-[#27272a] rounded-2xl p-4 hover:border-[#3f3f46] transition-colors">
+                            <label className="text-xs font-semibold text-[#71717a] mb-2 block uppercase tracking-wider">Buy</label>
+                            <SwapAmountInput
+                              label="To"
+                              swappableTokens={filteredTokens}
+                              token={USDCToken}
+                              type="to"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-6 space-y-4">
+                          <SwapButton className="!w-full !rounded-2xl !py-7 !text-lg font-bold !bg-linear-to-br !from-[#6366f1] !to-[#8b5cf6] !border-none hover:!scale-[1.02] active:!scale-95 transition-transform !shadow-[0_10px_25px_rgba(99,102,241,0.3)]" />
+                          <SwapMessage />
+                        </div>
+                      </Swap>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="limit"
+                      initial={{ opacity: 0, x: 10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -10 }}
+                      className="space-y-4"
+                    >
+                      <div className="space-y-3">
+                        <div className="bg-[#1c1c20] border border-[#27272a] rounded-2xl p-4">
+                          <label className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-2 block">Sell Amount</label>
+                          <div className="flex items-center gap-4">
+                            <input 
+                              type="number"
+                              value={amount}
+                              onChange={(e) => setAmount(e.target.value)}
+                              placeholder="0.00"
+                              className="bg-transparent border-none text-2xl font-bold text-white focus:outline-none w-full placeholder:text-[#27272a]"
+                            />
+                            <div className="bg-[#0b0b0c] p-1.5 rounded-xl border border-[#1f1f22]">
+                                <TokenSelectDropdown 
+                                  options={tokens}
+                                  token={fromToken}
+                                  setToken={setFromToken}
+                                />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-[#1c1c20] border border-[#27272a] rounded-2xl p-4">
+                          <label className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider mb-2 block">Limit Price (per unit)</label>
+                          <div className="flex items-center gap-3">
+                             <input 
+                              type="number"
+                              value={limitPrice}
+                              onChange={(e) => setLimitPrice(e.target.value)}
+                              placeholder="0.00"
+                              className="bg-transparent border-none text-xl font-bold text-white focus:outline-none w-full placeholder:text-[#27272a]"
+                            />
+                            <span className="text-sm font-bold text-[#52525b]">{toToken?.symbol}/{fromToken?.symbol}</span>
+                          </div>
+                        </div>
+
+                        <div className="bg-[#1c1c20] border border-[#27272a] rounded-2xl p-4">
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider">Buy Estimate</label>
+                            <label className="text-[10px] font-bold text-[#71717a] uppercase tracking-wider">Expiry</label>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <div className="text-xl font-bold text-[#10b981]">{calculateTotal()} {toToken?.symbol}</div>
+                            <div className="flex items-center gap-2 bg-[#0b0b0c] px-3 py-1.5 rounded-lg border border-[#1f1f22] cursor-pointer hover:border-[#3f3f46] transition-colors">
+                              <Clock className="w-3.5 h-3.5 text-[#71717a]" />
+                              <span className="text-xs font-bold text-white whitespace-nowrap">{expiry}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button 
+                        onClick={handlePlaceLimitOrder}
+                        className="w-full rounded-2xl py-6 text-lg font-bold bg-linear-to-br from-[#10b981] to-[#059669] text-white hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_25px_rgba(16,185,129,0.3)] mt-2"
+                      >
+                        Place Limit Order
+                      </button>
+                      
+                      <p className="text-[11px] text-[#52525b] text-center px-4">
+                        Order will execute automatically when market price matches your limit price. 0.1% fee on completion.
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
 
               <div className="mt-6 pt-6 border-t border-[#1f1f22] space-y-3">
                  <PriceDetail label="Price Impact" value="<0.01%" />
@@ -212,6 +338,23 @@ export default function SwapPage() {
                   <History className="w-4 h-4 text-[#6366f1]" /> Recent Activity
                 </h3>
                 <div className="space-y-5">
+                   {placedOrders.length > 0 && (
+                     <div className="mb-8 space-y-4">
+                        <h4 className="text-[10px] font-bold text-[#10b981] uppercase tracking-[1.5px]">Open Orders</h4>
+                        {placedOrders.map(order => (
+                          <div key={order.id} className="bg-[#1c1c20] border border-[#27272a] rounded-xl p-3 space-y-2 group hover:border-[#10b981] transition-colors">
+                            <div className="flex justify-between items-center text-[11px] font-bold">
+                              <span>Sell {order.amount} {order.from}</span>
+                              <span className="text-[#10b981] uppercase">{order.status}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-[10px] text-[#52525b]">
+                              <span>Price: {order.price}</span>
+                              <span>{order.time}</span>
+                            </div>
+                          </div>
+                        ))}
+                     </div>
+                   )}
                    <ActivityItem title="Swap ETH for USDC" time="2 mins ago" />
                    <ActivityItem title="Add Liquidity ETH/USDC" time="15 mins ago" />
                    <ActivityItem title="Enable USDC" time="1 hour ago" />
